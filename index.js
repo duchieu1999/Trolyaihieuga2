@@ -36,8 +36,10 @@ const RoomSchema = new mongoose.Schema({
 
 const Room = mongoose.model('Room', RoomSchema);
 
-// Express middleware
-app.use(express.static('public'));
+// Thêm dòng này vào server.js
+app.use(express.static(path.join(__dirname, 'public')));
+
+
 app.use(session({
   secret: 'carogamesecret',
   resave: false,
@@ -47,6 +49,14 @@ app.use(session({
 // Game state management
 const rooms = new Map();
 const queue = [];
+
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
 
 // Socket.IO logic
 io.on('connection', (socket) => {
