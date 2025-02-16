@@ -26,14 +26,8 @@ const Player = mongoose.model('Player', PlayerSchema);
 
 
 // Thêm dòng này vào server.js
-app.use(express.static(path.join(__dirname, 'public')));
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
+app.use(express.static('public'));
 
-app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
 
 // Game state
 const gameState = {
