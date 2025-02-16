@@ -2,10 +2,10 @@
 const express = require('express');
 const app = express();
 const http = require('http').createServer(app);
-const io = require('socket.io')(http);
 const mongoose = require('mongoose');
 const session = require('express-session');
 const path = require('path');
+const cors = require('cors');
 
 // MongoDB connection
 mongoose.connect('mongodb+srv://duchieufaryoung0:80E9gUahdOXmGKuy@cluster0.6nlv1cv.mongodb.net/telegram_bot_db?retryWrites=true&w=majority', {
@@ -39,6 +39,22 @@ const Room = mongoose.model('Room', RoomSchema);
 // Thêm dòng này vào server.js
 app.use(express.static(path.join(__dirname, 'public')));
 
+app.use(cors());
+
+// Hoặc cấu hình chi tiết hơn
+app.use(cors({
+    origin: '*',
+    methods: ['GET', 'POST'],
+    credentials: true
+}));
+
+// Cấu hình Socket.IO với CORS
+const io = require('socket.io')(http, {
+    cors: {
+        origin: "*",
+        methods: ["GET", "POST"]
+    }
+});
 
 app.use(session({
   secret: 'carogamesecret',
