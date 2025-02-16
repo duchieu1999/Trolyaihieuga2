@@ -8,7 +8,7 @@ const session = require('express-session');
 const path = require('path');
 
 // MongoDB connection
-mongoose.connect('mongodb://localhost/carogame', {
+mongoose.connect('mongodb+srv://duchieufaryoung0:80E9gUahdOXmGKuy@cluster0.6nlv1cv.mongodb.net/telegram_bot_db?retryWrites=true&w=majority', {
   useNewUrlParser: true,
   useUnifiedTopology: true
 });
