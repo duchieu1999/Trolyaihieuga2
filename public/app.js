@@ -14,18 +14,22 @@ class Game {
     }
 
     init() {
-        // Get Telegram user info from URL params
-        const urlParams = new URLSearchParams(window.location.search);
-        const telegramData = {
-            telegramId: urlParams.get('id'),
-            username: urlParams.get('username')
-        };
-
-        if (telegramData.telegramId) {
-            socket.emit('register', telegramData);
+        // Sửa phần lấy thông tin Telegram
+        if (window.Telegram && window.Telegram.WebApp) {
+            const webAppUser = window.Telegram.WebApp.initDataUnsafe.user;
+            if (webAppUser) {
+                const telegramData = {
+                    telegramId: webAppUser.id.toString(),
+                    username: webAppUser.username || webAppUser.first_name
+                };
+                socket.emit('register', telegramData);
+            } else {
+                this.showError('No Telegram data found');
+            }
         } else {
-            this.showError('No Telegram data found');
+            this.showError('Please open this app from Telegram');
         }
+    
     }
 
     setupSocketListeners() {
@@ -250,4 +254,9 @@ const game = new Game();
 if (window.Telegram && window.Telegram.WebApp) {
     window.Telegram.WebApp.ready();
     window.Telegram.WebApp.expand();
+
+    // Thêm xử lý sự kiện khi WebApp đóng
+    window.Telegram.WebApp.onEvent('viewportChanged', () => {
+        // Xử lý khi kích thước viewport thay đổi
+    });
 }
