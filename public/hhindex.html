@@ -1,16 +1,1008 @@
-// public/index.html
+// index.html
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
+    <title>Ultimate 2D Shooter</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Caro Online</title>
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
-    <script src="/socket.io/socket.io.js"></script>
+    <style>
+        @keyframes glow {
+            0% { text-shadow: 0 0 5px #fff, 0 0 10px #fff, 0 0 15px #0073e6; }
+            100% { text-shadow: 0 0 10px #fff, 0 0 20px #fff, 0 0 30px #0073e6; }
+        }
+        
+        .game-title {
+            animation: glow 1.5s ease-in-out infinite alternate;
+        }
+        
+        .weapon-slot {
+            transition: all 0.3s ease;
+            border: 2px solid rgba(255,255,255,0.1);
+        }
+        
+        .weapon-slot:hover {
+            transform: scale(1.1);
+            border-color: #0073e6;
+        }
+        
+        .modal-overlay {
+            backdrop-filter: blur(5px);
+        }
+        
+        .progress-bar {
+            transition: width 0.3s ease;
+        }
+        
+        .character-preview {
+            perspective: 1000px;
+        }
+        
+        .character-model {
+            transform-style: preserve-3d;
+            animation: float 3s ease-in-out infinite;
+        }
+        
+        @keyframes float {
+            0% { transform: translateY(0px) rotateY(0deg); }
+            50% { transform: translateY(-10px) rotateY(180deg); }
+            100% { transform: translateY(0px) rotateY(360deg); }
+        }
+    </style>
 </head>
 <body class="bg-gray-900 text-white">
-    <div id="app"></div>
-    <script src="app.js"></script>
-</body>
-</html>
+    <!-- Main Menu -->
+    <div id="mainMenu" class="fixed inset-0 z-50 flex items-center justify-center">
+        <div class="w-full max-w-4xl p-8 bg-gray-800 rounded-lg shadow-2xl">
+            <h1 class="game-title text-6xl font-bold text-center mb-8">Ultimate Shooter</h1>
+            
+            <!-- Game Modes -->
+            <div class="grid grid-cols-2 gap-4 mb-8">
+                <div class="game-mode p-4 bg-gray-700 rounded-lg cursor-pointer hover:bg-blue-600 transition-all"
+                     onclick="selectGameMode('deathmatch')">
+                    <h3 class="text-xl font-bold mb-2">1v1 Deathmatch</h3>
+                    <p>First to 5 kills wins!</p>
+                </div>
+                <div class="game-mode p-4 bg-gray-700 rounded-lg cursor-pointer hover:bg-blue-600 transition-all"
+                     onclick="selectGameMode('battle-royale')">
+                    <h3 class="text-xl font-bold mb-2">Battle Royale</h3>
+                    <p>Last player standing!</p>
+                </div>
+                <div class="game-mode p-4 bg-gray-700 rounded-lg cursor-pointer hover:bg-blue-600 transition-all"
+                     onclick="selectGameMode('ctf')">
+                    <h3 class="text-xl font-bold mb-2">Capture The Flag</h3>
+                    <p>Team-based flag capture!</p>
+                </div>
+                <div class="game-mode p-4 bg-gray-700 rounded-lg cursor-pointer hover:bg-blue-600 transition-all"
+                     onclick="selectGameMode('zombie')">
+                    <h3 class="text-xl font-bold mb-2">Zombie Mode</h3>
+                    <p>Survive the infection!</p>
+                </div>
+            </div>
+            
+            <!-- Character Customization -->
+            <div class="mb-8">
+                <h2 class="text-2xl font-bold mb-4">Customize Character</h2>
+                <div class="flex space-x-4">
+                    <div class="character-preview w-1/3 h-64 bg-gray-700 rounded-lg overflow-hidden">
+                        <div class="character-model w-full h-full"></div>
+                    </div>
+                    <div class="w-2/3 grid grid-cols-3 gap-4">
+                        <div class="weapon-slot p-2 bg-gray-700 rounded-lg text-center">
+                            <img src="/assets/weapons/pistol.png" class="w-16 h-16 mx-auto mb-2">
+                            <span>Pistol</span>
+                        </div>
+                        <div class="weapon-slot p-2 bg-gray-700 rounded-lg text-center">
+                            <img src="/assets/weapons/shotgun.png" class="w-16 h-16 mx-auto mb-2">
+                            <span>Shotgun</span>
+                        </div>
+                        <div class="weapon-slot p-2 bg-gray-700 rounded-lg text-center">
+                            <img src="/assets/weapons/rifle.png" class="w-16 h-16 mx-auto mb-2">
+                            <span>Rifle</span>
+                        </div>
+                        <!-- More weapon slots -->
+                    </div>
+                </div>
+            </div>
+            
+            <button class="w-full py-4 bg-blue-600 rounded-lg font-bold text-xl hover:bg-blue-700 transition-all"
+                    onclick="startGame()">
+                Play Now
+            </button>
+        </div>
+    </div>
+
+    <!-- In-Game UI -->
+    <div id="gameUI" class="hidden fixed inset-0">
+        <!-- Top HUD -->
+        <div class="absolute top-0 left-0 right-0 p-4 flex justify-between items-start">
+            <!-- Player Info -->
+            <div class="bg-gray-800 bg-opacity-80 p-2 rounded-lg">
+                <div class="flex items-center space-x-2 mb-2">
+                    <div class="w-20 h-4 bg-gray-700 rounded-full overflow-hidden">
+                        <div id="healthBar" class="progress-bar h-full bg-red-500" style="width: 100%"></div>
+                    </div>
+                    <span id="healthText">100</span>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <div class="w-20 h-4 bg-gray-700 rounded-full overflow-hidden">
+                        <div id="armorBar" class="progress-bar h-full bg-blue-500" style="width: 100%"></div>
+                    </div>
+                    <span id="armorText">100</span>
+                </div>
+            </div>
+            
+            <!-- Match Info -->
+            <div class="bg-gray-800 bg-opacity-80 p-2 rounded-lg text-center">
+                <div id="matchTimer" class="text-2xl font-bold">5:00</div>
+                <div id="matchScore" class="text-xl">Red: 0 - Blue: 0</div>
+            </div>
+            
+            <!-- Weapon Info -->
+            <div class="bg-gray-800 bg-opacity-80 p-2 rounded-lg">
+                <div id="currentWeapon" class="text-xl font-bold mb-1">AK-47</div>
+                <div class="flex items-center space-x-2">
+                    <span id="ammoCount">30/90</span>
+                    <div class="w-20 h-4 bg-gray-700 rounded-full overflow-hidden">
+                        <div id="reloadBar" class="progress-bar h-full bg-yellow-500" style="width: 100%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Kill Feed -->
+        <div id="killFeed" class="absolute top-4 right-4 w-64">
+            <!-- Kill messages will be added here dynamically -->
+        </div>
+
+        <!-- Minimap -->
+        <div class="absolute bottom-4 left-4 w-48 h-48 bg-gray-800 bg-opacity-80 rounded-lg">
+            <canvas id="minimapCanvas" width="192" height="192"></canvas>
+        </div>
+
+        <!-- Weapon Quick Select -->
+        <div class="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2">
+            <div class="weapon-slot p-2 bg-gray-800 bg-opacity-80 rounded-lg">1</div>
+            <div class="weapon-slot p-2 bg-gray-800 bg-opacity-80 rounded-lg">2</div>
+            <div class="weapon-slot p-2 bg-gray-800 bg-opacity-80 rounded-lg">3</div>
+            <div class="weapon-slot p-2 bg-gray-800 bg-opacity-80 rounded-lg">4</div>
+        </div>
+    </div>
+
+    <!-- Game Canvas -->
+    <canvas id="gameCanvas"></canvas>
+
+    <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.5.4/socket.io.js"></script>
+    <script src="game.js"></script>
+    <script>
+        // Game modes implementation
+        const gameModes = {
+            deathmatch: {
+                name: "1v1 Deathmatch",
+                maxPlayers: 2,
+                scoreToWin: 5,
+                init: function() {
+                    // Initialize deathmatch mode
+                    game.roundTime = 300; // 5 minutes
+                    game.respawnEnabled = true;
+                    game.teamBased = false;
+                }
+            },
+            'battle-royale': {
+                name: "Battle Royale",
+                maxPlayers: 10,
+                init: function() {
+                    // Initialize battle royale mode
+                    game.roundTime = 600; // 10 minutes
+                    game.respawnEnabled = false;
+                    game.shrinkingZone = true;
+                    initializeShrinkingZone();
+                }
+            },
+            ctf: {
+                name: "Capture The Flag",
+                maxPlayers: 10,
+                teamsRequired: true,
+                init: function() {
+                    // Initialize CTF mode
+                    game.roundTime = 600;
+                    game.respawnEnabled = true;
+                    game.teamBased = true;
+                    initializeFlags();
+                }
+            },
+            zombie: {
+                name: "Zombie Mode",
+                maxPlayers: 8,
+                init: function() {
+                    // Initialize zombie mode
+                    game.roundTime = 300;
+                    game.infectionEnabled = true;
+                    selectInitialZombie();
+                }
+            }
+        };
+
+        function selectGameMode(mode) {
+            currentGameMode = gameModes[mode];
+            // Update UI to show selected mode
+            document.querySelectorAll('.game-mode').forEach(el => {
+                el.classList.remove('bg-blue-600');
+            });
+            event.currentTarget.classList.add('bg-blue-600');
+        }
+
+        // Weapon system
+        const weapons = {
+            pistol: {
+                name: "Pistol",
+                damage: 20,
+                fireRate: 400,
+                magazineSize: 12,
+                reloadTime: 1.5,
+                spread: 0.05,
+                sprite: "/assets/weapons/pistol.png"
+            },
+            shotgun: {
+                name: "Shotgun",
+                damage: 15,
+                pellets: 8,
+                fireRate: 800,
+                magazineSize: 6,
+                reloadTime: 2.5,
+                spread: 0.2,
+                sprite: "/assets/weapons/shotgun.png"
+            },
+            rifle: {
+                name: "Assault Rifle",
+                damage: 25,
+                fireRate: 100,
+                magazineSize: 30,
+                reloadTime: 2,
+                spread: 0.08,
+                sprite: "/assets/weapons/rifle.png"
+            },
+            sniper: {
+                name: "Sniper Rifle",
+                damage: 100,
+                fireRate: 1200,
+                magazineSize: 5,
+                reloadTime: 3,
+                spread: 0.01,
+                sprite: "/assets/weapons/sniper.png"
+            }
+        };
+
+        // Enhanced player class
+        class Player {
+            constructor(id, x, y, team) {
+                this.id = id;
+                this.x = x;
+                this.y = y;
+                this.team = team;
+                this.health = 100;
+                this.armor = 100;
+                this.weapons = [];
+                this.currentWeapon = null;
+                this.speed = 5;
+                this.isReloading = false;
+                this.lastShootTime = 0;
+                this.kills = 0;
+                this.deaths = 0;
+                this.score = 0;
+                
+                // Movement
+                this.velocity = { x: 0, y: 0 };
+                this.isJumping = false;
+                this.canDoubleJump = true;
+                
+                // Special abilities
+                this.abilities = {
+                    dash: {
+                        cooldown: 5000,
+                        duration: 200,
+                        speed: 15,
+                        lastUsed: 0
+                    },
+                    shield: {
+                        cooldown: 15000,
+                        duration: 3000,
+                        active: false,
+                        lastUsed: 0
+                    }
+                };
+            }
+
+            update(deltaTime) {
+                // Update position based on velocity
+                this.x += this.velocity.x * deltaTime;
+                this.y += this.velocity.y * deltaTime;
+                
+                // Apply gravity
+                if (this.isJumping) {
+                    this.velocity.y += GRAVITY * deltaTime;
+                }
+                
+                // Update abilities cooldowns
+                Object.keys(this.abilities).forEach(ability => {
+                    const ab = this.abilities[ability];
+                    if (ab.active && Date.now() - ab.lastUsed > ab.duration) {
+                        ab.active = false;
+                    }
+                });
+                
+                // Handle weapon reloading
+                if (this.isReloading) {
+                    const weapon = weapons[this.currentWeapon];
+                    if (Date.now() - this.reloadStartTime > weapon.reloadTime * 1000) {
+                        this.finishReload();
+                    }
+                }
+            }
+
+            shoot(targetX, targetY) {
+                if (this.isReloading) return;
+                
+                const weapon = weapons[this.currentWeapon];
+                if (Date.now() - this.lastShootTime < weapon.fireRate) return;
+                
+                if (this.ammo <= 0) {
+                    this.startReload();
+return;
+                }
+
+                this.lastShootTime = Date.now();
+                this.ammo--;
+
+                // Calculate spread
+                const spread = (Math.random() - 0.5) * weapon.spread;
+                const angle = Math.atan2(targetY - this.y, targetX - this.x) + spread;
+
+                if (weapon.name === "Shotgun") {
+                    // Create multiple pellets for shotgun
+                    for (let i = 0; i < weapon.pellets; i++) {
+                        const pelletSpread = (Math.random() - 0.5) * weapon.spread;
+                        const pelletAngle = angle + pelletSpread;
+                        this.createBullet(pelletAngle, weapon.damage);
+                    }
+                } else {
+                    this.createBullet(angle, weapon.damage);
+                }
+
+                // Emit shoot event
+                socket.emit('playerShoot', {
+                    x: this.x,
+                    y: this.y,
+                    angle: angle,
+                    weapon: this.currentWeapon
+                });
+            }
+
+            createBullet(angle, damage) {
+                const bullet = {
+                    x: this.x + 25, // Center of player
+                    y: this.y + 25,
+                    angle: angle,
+                    speed: 15,
+                    damage: damage,
+                    playerId: this.id
+                };
+                game.bullets.push(bullet);
+            }
+
+            startReload() {
+                if (this.isReloading) return;
+                this.isReloading = true;
+                this.reloadStartTime = Date.now();
+                
+                // Update UI
+                updateReloadBar(0);
+                
+                // Emit reload start
+                socket.emit('playerReload', { started: true });
+            }
+
+            finishReload() {
+                const weapon = weapons[this.currentWeapon];
+                this.ammo = weapon.magazineSize;
+                this.isReloading = false;
+                
+                // Update UI
+                updateReloadBar(100);
+                updateAmmoCount(this.ammo);
+                
+                // Emit reload complete
+                socket.emit('playerReload', { started: false });
+            }
+
+            useAbility(abilityName) {
+                const ability = this.abilities[abilityName];
+                if (!ability || Date.now() - ability.lastUsed < ability.cooldown) return;
+
+                ability.active = true;
+                ability.lastUsed = Date.now();
+
+                switch (abilityName) {
+                    case 'dash':
+                        this.performDash();
+                        break;
+                    case 'shield':
+                        this.activateShield();
+                        break;
+                }
+            }
+
+            performDash() {
+                const dash = this.abilities.dash;
+                const angle = Math.atan2(this.velocity.y, this.velocity.x);
+                
+                this.velocity.x = Math.cos(angle) * dash.speed;
+                this.velocity.y = Math.sin(angle) * dash.speed;
+                
+                setTimeout(() => {
+                    this.velocity.x = Math.cos(angle) * this.speed;
+                    this.velocity.y = Math.sin(angle) * this.speed;
+                }, dash.duration);
+            }
+
+            activateShield() {
+                this.abilities.shield.active = true;
+                // Visual effect for shield
+                createShieldEffect(this);
+            }
+
+            takeDamage(amount) {
+                if (this.abilities.shield.active) {
+                    amount *= 0.5; // Reduce damage when shield is active
+                }
+
+                if (this.armor > 0) {
+                    const armorDamage = Math.min(this.armor, amount * 0.5);
+                    this.armor -= armorDamage;
+                    amount -= armorDamage;
+                }
+
+                this.health -= amount;
+
+                if (this.health <= 0) {
+                    this.die();
+                }
+
+                // Update UI
+                updateHealthBar(this.health);
+                updateArmorBar(this.armor);
+            }
+
+            die() {
+                this.deaths++;
+                if (game.currentMode === 'zombie' && !this.isZombie) {
+                    this.turnIntoZombie();
+                } else if (game.respawnEnabled) {
+                    this.respawn();
+                }
+
+                // Emit death event
+                socket.emit('playerDeath', {
+                    killer: this.lastDamageBy,
+                    weapon: this.lastDamageWeapon
+                });
+            }
+
+            respawn() {
+                const spawnPoint = game.getRandomSpawnPoint(this.team);
+                this.x = spawnPoint.x;
+                this.y = spawnPoint.y;
+                this.health = 100;
+                this.armor = 50;
+                this.ammo = weapons[this.currentWeapon].magazineSize;
+                this.isReloading = false;
+                
+                // Reset abilities cooldowns
+                Object.keys(this.abilities).forEach(ability => {
+                    this.abilities[ability].lastUsed = 0;
+                    this.abilities[ability].active = false;
+                });
+            }
+        }
+
+        // Game modes specific code
+        class BattleRoyaleMode {
+            constructor() {
+                this.safeZone = {
+                    x: GAME_CONFIG.width / 2,
+                    y: GAME_CONFIG.height / 2,
+                    radius: GAME_CONFIG.width / 2
+                };
+                this.shrinkSpeed = 0.5;
+                this.damageOutsideZone = 1;
+                this.lastZoneShrink = Date.now();
+            }
+
+            update() {
+                if (Date.now() - this.lastZoneShrink > 1000) {
+                    this.shrinkZone();
+                    this.damagePlayersOutsideZone();
+                    this.lastZoneShrink = Date.now();
+                }
+            }
+
+            shrinkZone() {
+                if (this.safeZone.radius > 100) {
+                    this.safeZone.radius -= this.shrinkSpeed;
+                }
+            }
+
+            damagePlayersOutsideZone() {
+                game.players.forEach(player => {
+                    const distance = Math.sqrt(
+                        Math.pow(player.x - this.safeZone.x, 2) +
+                        Math.pow(player.y - this.safeZone.y, 2)
+                    );
+                    if (distance > this.safeZone.radius) {
+                        player.takeDamage(this.damageOutsideZone);
+                    }
+                });
+            }
+
+            render(ctx) {
+                // Draw shrinking zone
+                ctx.beginPath();
+                ctx.strokeStyle = 'rgba(0, 255, 255, 0.5)';
+                ctx.lineWidth = 3;
+                ctx.arc(this.safeZone.x, this.safeZone.y, this.safeZone.radius, 0, Math.PI * 2);
+                ctx.stroke();
+                
+                // Draw danger zone
+                ctx.fillStyle = 'rgba(255, 0, 0, 0.2)';
+                ctx.fillRect(0, 0, GAME_CONFIG.width, GAME_CONFIG.height);
+                ctx.save();
+                ctx.globalCompositeOperation = 'destination-out';
+                ctx.beginPath();
+                ctx.arc(this.safeZone.x, this.safeZone.y, this.safeZone.radius, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+
+        class CTFMode {
+            constructor() {
+                this.flags = {
+                    red: {
+                        x: 100,
+                        y: GAME_CONFIG.height / 2,
+                        carrier: null
+                    },
+                    blue: {
+                        x: GAME_CONFIG.width - 100,
+                        y: GAME_CONFIG.height / 2,
+                        carrier: null
+                    }
+                };
+                this.scores = {
+                    red: 0,
+                    blue: 0
+                };
+            }
+
+            update() {
+                this.updateFlagCarriers();
+                this.checkFlagCapture();
+            }
+
+            updateFlagCarriers() {
+                ['red', 'blue'].forEach(team => {
+                    const flag = this.flags[team];
+                    if (flag.carrier) {
+                        flag.x = flag.carrier.x;
+                        flag.y = flag.carrier.y;
+                    }
+                });
+            }
+
+            checkFlagCapture() {
+                game.players.forEach(player => {
+                    const enemyTeam = player.team === 'red' ? 'blue' : 'red';
+                    const flag = this.flags[enemyTeam];
+                    
+                    if (!flag.carrier && this.isNearFlag(player, flag)) {
+                        this.pickupFlag(player, enemyTeam);
+                    }
+                    
+                    if (flag.carrier === player && this.isAtBase(player)) {
+                        this.captureFlag(player, enemyTeam);
+                    }
+                });
+            }
+
+            isNearFlag(player, flag) {
+                const distance = Math.sqrt(
+                    Math.pow(player.x - flag.x, 2) +
+                    Math.pow(player.y - flag.y, 2)
+                );
+                return distance < 30;
+            }
+
+            isAtBase(player) {
+                const baseX = player.team === 'red' ? 100 : GAME_CONFIG.width - 100;
+                const distance = Math.sqrt(
+                    Math.pow(player.x - baseX, 2) +
+                    Math.pow(player.y - GAME_CONFIG.height / 2, 2)
+                );
+                return distance < 50;
+            }
+
+            pickupFlag(player, flagTeam) {
+                this.flags[flagTeam].carrier = player;
+                // Emit flag pickup event
+                socket.emit('flagPickup', {
+                    team: flagTeam,
+                    playerId: player.id
+                });
+            }
+
+            captureFlag(player, flagTeam) {
+                this.scores[player.team]++;
+                this.resetFlag(flagTeam);
+                // Emit flag capture event
+                socket.emit('flagCapture', {
+                    team: player.team,
+                    playerId: player.id
+                });
+            }
+
+            resetFlag(team) {
+                const flag = this.flags[team];
+                flag.carrier = null;
+                flag.x = team === 'red' ? 100 : GAME_CONFIG.width - 100;
+                flag.y = GAME_CONFIG.height / 2;
+            }
+
+            render(ctx) {
+                // Draw flags
+                ['red', 'blue'].forEach(team => {
+                    const flag = this.flags[team];
+                    ctx.fillStyle = team;
+                    ctx.beginPath();
+                    ctx.moveTo(flag.x, flag.y);
+                    ctx.lineTo(flag.x, flag.y - 30);
+                    ctx.lineTo(flag.x + 20, flag.y - 20);
+                    ctx.lineTo(flag.x, flag.y - 10);
+                    ctx.fill();
+                });
+                
+                // Draw bases
+                ctx.strokeStyle = 'red';
+                ctx.beginPath();
+                ctx.arc(100, GAME_CONFIG.height / 2, 50, 0, Math.PI * 2);
+                ctx.stroke();
+                
+                ctx.strokeStyle = 'blue';
+                ctx.beginPath();
+                ctx.arc(GAME_CONFIG.width - 100, GAME_CONFIG.height / 2, 50, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+        }
+
+        class ZombieMode {
+            constructor() {
+                this.zombies = new Set();
+                this.survivors = new Set();
+                this.infectionRadius = 50;
+                this.zombieSpeed = 7;
+                this.survivorSpeed = 5;
+            }
+
+            initializeMode(players) {
+                // Select random initial zombie
+                const initialZombie = players[Math.floor(Math.random() * players.length)];
+                this.turnPlayerIntoZombie(initialZombie);
+                
+                // Rest are survivors
+                players.forEach(player => {
+                    if (player !== initialZombie) {
+                        this.survivors.add(player);
+                        player.speed = this.survivorSpeed;
+                    }
+                });
+            }
+
+            turnPlayerIntoZombie(player) {
+                this.zombies.add(player);
+                this.survivors.delete(player);
+                player.isZombie = true;
+                player.speed = this.zombieSpeed;
+                player.color = 'green';
+                
+                // Emit zombie transformation
+                socket.emit('playerZombified', {
+                    playerId: player.id
+                });
+            }
+
+            update() {
+                // Check for infections
+                this.zombies.forEach(zombie => {
+                    this.survivors.forEach(survivor => {
+                        if (this.canInfect(zombie, survivor)) {
+                            this.turnPlayerIntoZombie(survivor);
+                        }
+                    });
+                });
+                
+                // Check win condition
+                if (this.survivors.size === 0) {
+                    this.endGame('zombies');
+                } else if (game.roundTime <= 0) {
+                    this.endGame('survivors');
+                }
+            }
+
+            canInfect(zombie, survivor) {
+                const distance = Math.sqrt(
+                    Math.pow(zombie.x - survivor.x, 2) +
+                    Math.pow(zombie.y - survivor.y, 2)
+                );
+                return distance < this.infectionRadius;
+            }
+
+            render(ctx) {
+                // Draw infection radius around zombies
+                this.zombies.forEach(zombie => {
+                    ctx.beginPath();
+                    ctx.strokeStyle = 'rgba(0, 255, 0, 0.3)';
+                    ctx.arc(zombie.x, zombie.y, this.infectionRadius, 0, Math.PI * 2);
+                    ctx.stroke();
+                });
+            }
+
+            endGame(winner) {
+                game.endMatch({
+                    winner: winner,
+                    survivorsRemaining: this.survivors.size,
+                    totalTime: GAME_CONFIG.roundTime - game.roundTime
+                });
+            }
+        }
+
+        // UI Updates
+        function updateUI() {
+            updateHealthBar(game.localPlayer.health);
+            updateArmorBar(game.localPlayer.armor);
+            updateAmmoCount(game.localPlayer.ammo);
+            updateScoreboard();
+            updateMinimap();
+            updateKillFeed();
+        }
+
+        function updateHealthBar(health) {
+            const healthBar = document.getElementById('healthBar');
+            const healthText = document.getElementById('healthText');
+            healthBar.style.width = `${health}%`;
+            healthText.textContent = Math.round(health);
+        }
+
+        function updateArmorBar(armor) {
+            const armorBar = document.getElementById('armorBar');
+            const armorText = document.getElementById('armorText');
+            armorBar.style.width = `${armor}%`;
+            armorText.textContent = Math.round(armor);
+        }
+
+        function updateAmmoCount(ammo) {
+            const weapon = weapons[game.localPlayer.currentWeapon];
+            document.getElementById('ammoCount').textContent = 
+                `${ammo}/${weapon.magazineSize}`;
+        }
+
+        function updateScoreboard() {
+            const scoreboard = document.getElementById('matchScore');
+            switch(game.currentMode) {
+                case 'deathmatch':
+                    scoreboard.textContent = `${game.localPlayer.kills}/${game.localPlayer.deaths}`;
+                    break;
+                case 'ctf':
+                    scoreboard.textContent = `Red: ${game.ctfMode.scores.red} - Blue: ${game.ctfMode.scores.blue}`;
+                    break;
+                case 'zombie':
+                    scoreboard.textContent = `Survivors: ${game.zombieMode.survivors.size}`;
+                    break;
+                case 'battle-royale':
+                    scoreboard.textContent = `Alive: ${game.players.size}`;
+                    break;
+            }
+        }
+
+        function updateMinimap() {
+            const minimapCanvas = document.getElementById('minimapCanvas');
+            const ctx = minimapCanvas.getContext('2d');
+            const scale = minimapCanvas.width / GAME_CONFIG.width;
+
+            // Clear minimap
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+            ctx.fillRect(0, 0, minimapCanvas.width, minimapCanvas.height);
+
+            // Draw players
+            game.players.forEach(player => {
+                ctx.fillStyle = player.team || (player.isZombie ? 'green' : 'white');
+                ctx.beginPath();
+                ctx.arc(
+                    player.x * scale,
+                    player.y * scale,
+                    3,
+                    0,
+                    Math.PI * 2
+                );
+                ctx.fill();
+            });
+
+            // Draw game mode specific elements
+            switch(game.currentMode) {
+                case 'battle-royale':
+                    // Draw safe zone
+                    ctx.strokeStyle = 'cyan';
+                    ctx.beginPath();
+                    ctx.arc(
+                        game.brMode.safeZone.x * scale,
+                        game.brMode.safeZone.y * scale,
+                        game.brMode.safeZone.radius * scale,
+                        0,
+                        Math.PI * 2
+                    );
+                    ctx.stroke();
+                    break;
+                case 'ctf':
+                    // Draw flags
+                    ['red', 'blue'].forEach(team => {
+                        const flag = game.ctfMode.flags[team];
+                        ctx.fillStyle = team;
+                        ctx.fillRect(
+                            flag.x * scale - 2,
+                            flag.y * scale - 2,
+                            4,
+                            4
+                        );
+                    });
+                    break;
+            }
+        }
+
+        function addKillFeed(killer, victim, weapon) {
+            const killFeed = document.getElementById('killFeed');
+            const killMessage = document.createElement('div');
+            killMessage.className = 'kill-message bg-gray-800 bg-opacity-80 p-2 mb-2 rounded fade-out';
+            killMessage.innerHTML = `
+                <span class="text-blue-400">${killer}</span>
+                <img src="${weapons[weapon].sprite}" class="inline w-4 h-4 mx-1">
+                <span class="text-red-400">${victim}</span>
+            `;
+            
+            killFeed.appendChild(killMessage);
+            setTimeout(() => killMessage.remove(), 5000);
+        }
+
+        // Particle System
+        class ParticleSystem {
+            constructor() {
+                this.particles = [];
+            }
+
+            createExplosion(x, y, color, count = 10) {
+                for (let i = 0; i < count; i++) {
+                    const angle = (Math.PI * 2 / count) * i;
+                    const speed = 2 + Math.random() * 2;
+                    this.particles.push({
+                        x: x,
+                        y: y,
+                        vx: Math.cos(angle) * speed,
+                        vy: Math.sin(angle) * speed,
+                        color: color,
+                        life: 1.0,
+                        size: 3 + Math.random() * 2
+                    });
+                }
+            }
+
+            update() {
+                for (let i = this.particles.length - 1; i >= 0; i--) {
+                    const particle = this.particles[i];
+                    particle.x += particle.vx;
+                    particle.y += particle.vy;
+                    particle.life -= 0.02;
+                    particle.size *= 0.95;
+
+                    if (particle.life <= 0) {
+                        this.particles.splice(i, 1);
+                    }
+                }
+            }
+
+            render(ctx) {
+                this.particles.forEach(particle => {
+                    ctx.globalAlpha = particle.life;
+                    ctx.fillStyle = particle.color;
+                    ctx.beginPath();
+                    ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
+                    ctx.fill();
+                });
+                ctx.globalAlpha = 1;
+            }
+        }
+
+        // Sound System
+        class SoundSystem {
+            constructor() {
+                this.sounds = {};
+                this.loadSounds();
+            }
+
+            loadSounds() {
+                const soundFiles = {
+                    shoot: '/assets/sounds/shoot.mp3',
+                    hit: '/assets/sounds/hit.mp3',
+                    explosion: '/assets/sounds/explosion.mp3',
+                    pickup: '/assets/sounds/pickup.mp3',
+                    reload: '/assets/sounds/reload.mp3',
+                    jump: '/assets/sounds/jump.mp3',
+                    death: '/assets/sounds/death.mp3'
+                };
+
+                Object.entries(soundFiles).forEach(([name, path]) => {
+                    this.sounds[name] = new Audio(path);
+                });
+            }
+
+            play(soundName, volume = 1.0) {
+                const sound = this.sounds[soundName];
+                if (sound) {
+                    sound.volume = volume;
+                    sound.currentTime = 0;
+                    sound.play().catch(e => console.log('Sound play failed:', e));
+                }
+            }
+
+            playPositional(soundName, sourceX, sourceY, listenerX, listenerY) {
+                const distance = Math.sqrt(
+                    Math.pow(sourceX - listenerX, 2) +
+                    Math.pow(sourceY - listenerY, 2)
+                );
+                const maxDistance = 1000;
+                const volume = Math.max(0, 1 - distance / maxDistance);
+                this.play(soundName, volume);
+            }
+        }
+
+        // Game Initialization
+        function initGame() {
+            game = new Game();
+            game.particles = new ParticleSystem();
+            game.sounds = new SoundSystem();
+
+            // Initialize game modes
+            game.modes = {
+                deathmatch: new DeathmatchMode(),
+                'battle-royale': new BattleRoyaleMode(),
+                ctf: new CTFMode(),
+                zombie: new ZombieMode()
+            };
+
+            // Set default mode
+            game.currentMode = 'deathmatch';
+            game.activeMode = game.modes[game.currentMode];
+
+            // Start main menu music
+            game.sounds.play('menu-music', 0.3);
+        }
+
+        // Handle browser resize
+        window.addEventListener('resize', () => {
+            GAME_CONFIG.width = window.innerWidth;
+            GAME_CONFIG.height = window.innerHeight;
+            game.canvas.width = GAME_CONFIG.width;
+            game.canvas.height = GAME_CONFIG.height;
+        });
+
+        // Start the game when everything is loaded
+        window.onload = () => {
+            initGame();
+        };
