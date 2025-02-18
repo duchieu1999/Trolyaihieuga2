@@ -271,11 +271,9 @@
 
         <div style="text-align: center;">
             <button class="button" id="extractBtn" style="display: none;">
-                Trích xuất văn bản
+                Trích xuất văn bản từ ảnh
             </button>
-            <button class="button" id="sendBtn" style="display: none;">
-                Gửi lên Telegram
-            </button>
+            
         </div>
     </div>
 
@@ -414,13 +412,13 @@
 
                 const data = await response.json();
                 if (data.ok) {
-                    showNotification('Gửi ảnh lên Telegram thành công!', 'success');
+                    showNotification('Gửi ảnh lên thành công, nhấn nút trích xuất để trích xuất được vĂN bản từ hình ảnh!', 'success');
                 } else {
                     throw new Error(data.description);
                 }
             } catch (error) {
                 console.error(error);
-                showNotification('Lỗi khi gửi ảnh lên Telegram!', 'error');
+                showNotification('Lỗi khi gửi ảnh lên!', 'error');
             }
             showLoading(false);
         }
