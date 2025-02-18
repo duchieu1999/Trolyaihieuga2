@@ -103,16 +103,36 @@
             transform: scale(1.02);
         }
 
-        .text-output {
-            background: rgba(0, 0, 0, 0.2);
-            border-radius: 10px;
-            padding: 20px;
-            margin: 20px 0;
-            max-height: 200px;
-            overflow-y: auto;
-            display: none;
-            animation: slideUp 0.5s ease-out;
-        }
+        // Thêm vào phần style CSS
+.copy-button {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: #4ecdc4;
+    border: none;
+    border-radius: 5px;
+    padding: 5px 10px;
+    color: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.copy-button:hover {
+    background: #3dbdb4;
+    transform: scale(1.05);
+}
+
+        .copy-button {
+    position: relative;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 10px;
+    padding: 20px;
+    margin: 20px 0;
+    max-height: 200px;
+    overflow-y: auto;
+    display: none;
+    animation: slideUp 0.5s ease-out;
+}
 
         @keyframes slideUp {
             from { opacity: 0; transform: translateY(20px); }
@@ -267,7 +287,12 @@
             <img id="previewImage" class="preview-image">
         </div>
 
-        <div class="text-output" id="textOutput"></div>
+       <div class="text-output" id="textOutput">
+    <button class="copy-button" id="copyBtn" style="display: none;">
+        📋 Sao chép ngay
+    </button>
+    <div id="textContent"></div>
+</div>
 
         <div style="text-align: center;">
             <button class="button" id="extractBtn" style="display: none;">
@@ -298,6 +323,8 @@
         const sendBtn = document.getElementById('sendBtn');
         const loading = document.getElementById('loading');
         const notification = document.getElementById('notification');
+        const copyBtn = document.getElementById('copyBtn');
+        const textContent = document.getElementById('textContent');
 
         // Variables
         let currentImage = null;
@@ -311,6 +338,15 @@
         fileInput.addEventListener('change', handleFileSelect);
         extractBtn.addEventListener('click', extractText);
         sendBtn.addEventListener('click', sendToTelegram);
+        
+        copyBtn.addEventListener('click', async () => {
+    try {
+        await navigator.clipboard.writeText(extractedText);
+        showNotification('Đã sao chép văn bản!', 'success');
+    } catch (err) {
+        showNotification('Không thể sao chép văn bản!', 'error');
+    }
+});
 
         // Functions
         function handleDragOver(e) {
@@ -380,9 +416,10 @@
                 await worker.terminate();
 
                 extractedText = text;
-                textOutput.textContent = text;
-                textOutput.style.display = 'block';
-                showNotification('Trích xuất văn bản thành công!', 'success');
+    textContent.textContent = text;
+    textOutput.style.display = 'block';
+    copyBtn.style.display = 'block';
+    showNotification('Trích xuất văn bản thành công!', 'success');
             } catch (error) {
                 console.error(error);
                 showNotification('Lỗi khi trích xuất văn bản!', 'error');
