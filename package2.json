@@ -2,10 +2,10 @@
   "name": "caro-online",
   "version": "1.0.0",
   "description": "Online Caro game with ranking system",
-  "main": "index.html",
+  "main": "index.js",
   "scripts": {
-    "start": "node index.html",
-    "dev": "nodemon index.html"
+    "start": "node index.js",
+    "dev": "nodemon index.js"
   },
   "dependencies": {
     "express": "^4.17.1",
