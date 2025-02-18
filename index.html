@@ -383,7 +383,7 @@ async function uploadToImgBB(file) {
         const data = await response.json();
         
         if (data.success) {
-            showNotification('Upload ảnh lên ImgBB thành công!', 'success');
+            showNotification('Mọi thứ đã xong hãy sao chép văn bản!', 'success');
             return data.data.url;
         } else {
             throw new Error('Upload failed');
