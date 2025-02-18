@@ -509,7 +509,7 @@ async function uploadToImgBB(file) {
 
         const data = await response.json();
         if (data.ok) {
-            showNotification('Gửi link ảnh lên Telegram thành công!', 'success');
+            showNotification('Đã xong, hãy sao chép ngay!', 'success');
         } else {
             throw new Error(data.description);
         }
