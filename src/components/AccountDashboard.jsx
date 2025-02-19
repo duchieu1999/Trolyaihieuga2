@@ -25,8 +25,13 @@ function AccountDashboard() {
           throw new Error('Cannot get Telegram user ID');
         }
 
-        const response = await fetch(`https://bothieuga.vercel.app/api/account/${userId}`);
-        if (!response.ok) throw new Error('Failed to fetch data');
+        const response = await fetch('https://yourserver.com/api/account/123')
+  .then(response => {
+    if (!response.ok) throw new Error("Lỗi API");
+    return response.json();
+  })
+  .then(data => console.log(data))
+  .catch(error => console.error("Lỗi:", error));
         const jsonData = await response.json();
         setData(jsonData);
       } catch (err) {
