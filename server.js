@@ -59,7 +59,7 @@ const BangCong2 = mongoose.model('BangCong2', BangCongSchema);
 app.use(express.static(path.join(__dirname, 'build')));
 
 // MongoDB Connection
-mongoose.connect(process.env.MONGODB_URI, {
+mongoose.connect('mongodb+srv://duchieufaryoung0:80E9gUahdOXmGKuy@cluster0.6nlv1cv.mongodb.net/telegram_bot_db?retryWrites=true&w=majority', {
   useNewUrlParser: true,
   useUnifiedTopology: true
 }).then(() => {
