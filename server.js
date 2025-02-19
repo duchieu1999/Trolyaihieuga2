@@ -14,6 +14,12 @@ app.use(cors({
 }));
 app.use(express.json());
 
+app.use((err, req, res, next) => {
+  console.error("Lỗi xảy ra:", err.stack);
+  res.status(500).json({ error: 'Internal server error' });
+});
+
+
 // MongoDB Models
 const MemberSchema = new mongoose.Schema({
   userId: { type: Number, unique: true },
